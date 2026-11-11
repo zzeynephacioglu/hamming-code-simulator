@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamming Error-Correcting Code Simülatörü</title>
+    <style>
+
+        *{
+            box-sizing:border-box;
+            margin:0;
+            padding:0;
+        }
+
+        body{
+            font-family:'Courier New', Courier, monospace;
+            background-color:#2c3539;
+            padding: 25px;
+            text-align:center;
+            line-height:1.5;
+        }
+
+        .container{
+            max-width:1100px;
+            margin:0 auto;
+            background-color:#EAE3D1;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        header{
+            font-family:'Courier New', Courier, monospace;
+            margin-bottom:32px;
+            text-align:center;
+            border-bottom:1px solid #334155;
+            padding-bottom:15px;
+        }
+
+        .grid-3{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:25px;
+            margin-bottom:30px;
+        }
+
+        .panel{
+            margin:20px 0;
+            padding:15px;
+            background-color:#FFFFF0;
+            border-radius:10px;
+            box-shadow: 0 4px 20px rgba(26, 35, 178, 0.15);
+            border:1px solid rgba(26, 35, 178, 0.2);
+            grid-template-columns:1fr 1fr;
+        }
+
+        label{
+            font-family:'Courier New', Courier, monospace;
+            font-weight:bold;
+            font-size:20px;
+            margin-bottom:10px;
+            color:black;
+        }
+
+        input, button{
+            font-family:'Courier New', Courier, monospace;
+            padding:10px;
+            margin:5px;
+            border:1px solid #ccc;
+            font-size:16px;
+            border-radius:5px;
+        }
+
+        button{
+            font-family:'Courier New', Courier, monospace;
+            background-color:#3d312a;
+            color:white;
+            border:none;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background-color:#D2B48C;
+            cursor:pointer;
+        }
+
+        button.active{
+            background-color: #16a808;
+            color: white;
+        }
+
+        button:disabled{
+            background-color: #aaa;
+            cursor: not-allowed;
+            color: #eee;
+        }
+
+        #grup{ /*iki panelin disindaki ana kutu*/
+            display: flex;
+            gap:25px; /*iki panel arasi bosluk*/
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        #grup.panel{
+            flex: 1; /*iki panelin de esit genislikte olmasi icin*/
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /*icerekler panelde dengeli dagilsin*/
+        }
+
+        .box{
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(26, 35, 178, 0.15);
+            border:1px solid rgba(26, 35, 178, 0.2);
+            font-family:'Courier New', Courier, monospace;
+            margin:15px 0;
+            padding:12px;
+            border-radius:5px;
+            background-color:#FFFFF0;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .bellek-container{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .bit-box{
+            width: 50px;
+            height: 55px;
+            border: 2px solid #cbd5e1;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            position: relative;
+            background-color: whitesmoke;
+            overflow: hidden;
+            user-select: none;
+            margin: 0 2px;
+            padding-top: 6px;
+            padding-bottom: 14px;
+        }
+
+        .bit-box:hover{
+            border-color: #3d312a;
+        }
+
+        .bit-box-renk{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+        }
+
+        .legend-item{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .legend-color{
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .karsilastir, .sonuc{
+            display: flex;
+            justify-content: space-between;
+            max-width: 500px;
+            margin: 10px auto;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 5px;
+        }
+
+        .signal-box{
+            font-weight: bold;
+            display: inline-block;
+            margin: 15px 0;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .signal-clean{
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .signal-dirty{
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .hidden{
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> Hamming Kodu Simülatörü</h1>
+        <p>Hamming kodu, veri iletimi veya depolaması sırasında meydana gelen hataları (bozulan bitleri) tespit edip düzeltebilen bir hata kontrol algoritmasıdır.</p>
+
+        <div class="grid-3">
+            <div class="panel">
+                <label for="bitSecimi">BİT UZUNLUĞU SEÇİMİ:</label>
+                <div class="btn-group">
+                    <button id="buton-8" class="buton-uzunluk active" onclick="bitUzunlukDegisim(8)">8-Bit</button>
+                    <button id="buton-16" class="buton-uzunluk" onclick="bitUzunlukDegisim(16)">16-Bit</button>
+                    <button id="buton-32" class="buton-uzunluk" onclick="bitUzunlukDegisim(32)">32-Bit</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div id="hata_tespit" style="display:none; color:red; font-weight:bold; margin-bottom:10px;"></div>
+                <label for="veriGirisi">VERİ GİRİŞİ:</label>
+                <input type="text" id="veriGirisi" placeholder="Örn: 10110010">
+                <button class="buton-onay" onclick="bellegeYaz()">Belleğe Yaz</button>
+            </div>
+        </div>
+
+        
+        <div class="hidden" id="alan"> <!--bellek -->
+            <div class="panel" style="margin-bottom:24px;">
+                <p><b>BELLEK GÖRÜNÜMÜ:</b> Veri (M) ve Parite (K) bitlerinin bellekteki güncel dizilimidir. Yapay hata enjekte etmek için istediğiniz bit kutusuna tıklayabilirsiniz.</p>
+                <div class="bellek-container" id="bellek-bit-container"></div>
+                <div class="box">
+                    <div class="legend-item"><div class="legend-color" style="background-color: #2563eb;"></div><span>Veri Biti(M)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #06b6d4;"></div><span>Parity Biti(K)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #dc2626"></div><span style="font-weight:bold; color:#f87171";>Yapay Hatalı Bit</span></div>
+                    
+                </div>
+            </div>
+
+            <div id="grup">
+                <div class="panel"> <!--karsilastirma & sendrom-->
+                    <p><b>KARŞILAŞTIRMA & SENDROM:</b> Bellekteki parite bitleri ile yeniden hesaplanan parite bitleri karşılaştırılır ve hata konumunu belirleyen Sendrom kelimesi üretilir.</p>
+                    <div class="karsilastir">
+                        <span class="baslik">Yazılan Parite:</span>
+                        <span id="yazilan-parite" class="bilgi" style="color:#805ad5;">-</span>
+                    </div>
+                    <div class="karsilastir">
+                        <span class="baslik">Hesaplanan Parite:</span>
+                        <span id="hesaplanan-parite" class="bilgi" style="color:#db1e1e;">-</span>
+                    </div>
+                    <div class="karsilastir">
+                        <span class="baslik" style="font-weight:bold;">Sendrom:</span>
+                        <span id="sendrom-kelime" class="bilgi" style="color:#ef9c0c;">-</span>
+                    </div>
+                    <div id="error-signal-box" class="signal-box signal-clean">Hata Sinyali: TEMİZ (0)</div>
+                </div>
+
+            
+                <div class="panel"> <!--duzeltme-->
+                    <p><b>DÜZELTME & ÇIKIŞ:</b> Sendrom kelimesinden gelen konum bilgisine göre hatalı bit otomatik olarak düzeltilir ve dışarıya temiz veri aktarılır.</p>
+                    <div class="sonuc">
+                        <div class="sonuc-baslik">Hatalı Bit Konumu</div>
+                        <div id="detected-error-pos" style="color:#573105;font-weight:bold;">Hata Yok</div>
+                    </div>
+                    <div class="sonuc">
+                        <div class="sonuc-baslik">Çıkış Bitleri</div>
+                        <div id="data-out-text" style="color:#573105;font-weight:bold;">-</div>
+                    </div>
+                    <button onclick="hatayiDuzelt()" id="fix-btn" disabled>Bitleri Düzelt</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        var bitUzunluk=8; //Varsayilan bit uzunlugu
+        var bellekBitler=[]; //BEllekteki bitleri tutan dizi
+        var yapayHataIndex=-1; //yapay hatanın konumu icin
+        var girisVerisi=""; //Kullanici tarafindan girilen veri
+
+        function getParityCount(p){ //Parity bitlerinin sayısını hesaplar
+            //2^k >= p + k + 1 kosulunu saglayan en kucuk k degerini buluruz
+            var k=0;
+            while (Math.pow(2,k)< (p+k+1)){
+                k++;
+            }
+            return k;
+        }
+
+        function bitUzunlukDegisim(bit){ //bit uzunlugunu degistirmek icin fonksiyon
+            bitUzunluk=bit;
+            document.querySelectorAll('.buton-uzunluk').forEach(function(b){
+                b.classList.remove('active'); //tum butonlardan aktifliği kaldirir
+            });
+            document.getElementById('buton-' + bit).classList.add('active'); //secilen bitin butonunu aktif yapar
+            //bellegi sifirla
+            bellekBitler=[]; //hafizadaki eski bitler silinir
+            yapayHataIndex=-1; //yapay hata varsa konumu silinir
+            document.getElementById('alan').classList.add('hidden'); //eski sonuc ve tablolar gizlenir
+            document.getElementById('veriGirisi').value=''; //eski giris silinir
+            document.getElementById('veriGirisi').placeholder='Örn: ' + '1'.repeat(Math.floor(bit/2)) + '0'.repeat(bit-Math.floor(bit/2)); //bit giris kutusundaki ornek bit icin dinamik ornek olusturur
+        }
+
+        function bellegeYaz(){
+            var veriGirisi=document.getElementById('veriGirisi').value.trim(); //kullanicinin girdigi veriyi alıp bosluklari temizledik
+            if(veriGirisi.length!==bitUzunluk || !/^[01]+$/.test(veriGirisi)){
+                document.getElementById('hata_tespit').style.display='block';
+                alert("Lütfen" +bitUzunluk+ "-bit uzunluğunda ve 0 ile 1 içeren veri giriniz.");
+                return;
+            }
+            document.getElementById('hata_tespit').style.display='none';
+            girisVerisi=veriGirisi; //girisVerisi degiskenine kullanicinin girdigi veriyi atariz.
+            
+            var p=getParityCount(bitUzunluk); //parity bitlerinin sayisi alinir
+            var toplamUzunluk=bitUzunluk+p;
+            bellekBitler=[];
+            yapayHataIndex=-1;
+
+            var sayac=0;
+            var tersGiris=veriGirisi.split('').reverse().join(''); //giris verisi ters cevrilir
+
+            for(var i=1; i<=toplamUzunluk; i++){
+                if((i&(i-1))===0){ //parity bitlerinin konumu icin
+                    bellekBitler[i-1]={type:'p', val:0, orig:0, pos:i}; //parity icin obje olusturur
+                }else{
+                    var bellekDeger=parseInt(tersGiris.charAt(sayac)); //kullanicinin girdigi veri alinir
+                    sayac++;
+                    bellekBitler[i-1]={type:'m', val:bellekDeger, orig:bellekDeger, pos:i}; //veri biti icin obje olusturmada kullanilir
+                } 
+            }
+            hammingHesaplama(bellekBitler); //hamming kodu icin çagıırı
+            
+            for(var i=0; i<bellekBitler.length; i++){
+                bellekBitler[i].orig=bellekBitler[i].val;
+            }
+
+            arayuzGuncelle();
+            document.getElementById('alan').classList.remove('hidden');
+        }
+
+        function hammingHesaplama(bitler){ //parity bitlerinin degerlerini hesaplama fonksiyonu 
+            var uzunluk=bitler.length;
+            for(var i=0; i<uzunluk; i++){
+                if(bitler[i].type==='p'){ //parity bitlerinin degerini hesaplamak icin sadece parity bitlerini bul
+                    var parityPozisyon=bitler[i].pos; //parity bitinin pozisyonunu al
+                    var xorToplam=0; //xor sayaci baslat
+                    for(var j=1; j<=uzunluk; j++){ //parity bitinin etkilediklerini bulmak icin kullanilan dongu
+                        if(j!=parityPozisyon && (j & parityPozisyon)===parityPozisyon){ //
+                        xorToplam^=bitler[j-1].val; //parity bitinin etkilediklerini xorla ve xorToplama ata
+                    }
+                }
+                bitler[i].val=xorToplam; 
+                }
+            }
+        }
+
+        function bitHatasi(index){ //bit hatasi ekleme fonksiyonu
+            var hedefBit=index-1;
+            if(yapayHataIndex===hedefBit){ 
+                bellekBitler[hedefBit].val=bellekBitler[hedefBit].orig; //ayni bite tekrar tiklaninca yapay hatayi kaldir
+                yapayHataIndex=-1;
+            } else{
+                if(yapayHataIndex!==-1){
+                    bellekBitler[yapayHataIndex].val=bellekBitler[yapayHataIndex].orig; //var olan yapay hatayi kaldir
+                }
+                yapayHataIndex=hedefBit; //yeni yapay hatayi ata
+                bellekBitler[hedefBit].val=1-bellekBitler[hedefBit].orig; //yapay hatayi ekle
+            }
+            arayuzGuncelle(); //arayuzu guncelle
+        }
+
+        function hatayiDuzelt(){
+            var sendrom=sendromHesapla();
+
+            if(sendrom===0){
+                alert("Hata bulunamadı.");
+                return;
+            }
+
+            bellekBitler[sendrom-1].val=1-bellekBitler[sendrom-1].val;
+            yapayHataIndex=-1; //yapay hatayi sifirla
+            arayuzGuncelle(); //arayuzu guncelle
+        }
+
+        function sendromHesapla(){
+            var sendrom=0;
+            for(var i=0; i<bellekBitler.length; i++){
+                if(bellekBitler[i].type==='p'){
+                    var parityPos= bellekBitler[i].pos;
+                    var parityKontrol=0;  
+
+                    for(var j=1; j<=bellekBitler.length; j++){
+                        if((j&parityPos)===parityPos){
+                            parityKontrol^=bellekBitler[j-1].val;
+                        }
+                    }
+
+                    if(parityKontrol!==0){
+                        sendrom+=parityPos;
+                    }
+                }
+            }
+            return sendrom;
+        }
+
+        function arayuzGuncelle(){
+            var bellekContainer=document.getElementById('bellek-bit-container'); //bellek gorunumu
+            bellekContainer.innerHTML=''; //bellek container temizle
+
+            //buyuk bit numarasi solda olacak sekilde ters dizi
+            for(var i=bellekBitler.length-1; i>=0; i--){
+                var bit=bellekBitler[i]; //bellekteki bitleri ters cevir ve diziye ekle
+                var element=document.createElement('div');
+                element.classList.add('bit-box');
+                
+                var renkElement=document.createElement('div'); 
+                renkElement.classList.add('bit-box-renk'); 
+                
+                if(bit.val!==bit.orig){
+                    renkElement.style.backgroundColor='#dc2626'; //hatali bit rengi
+                } else if(bit.type==='p'){
+                    renkElement.style.backgroundColor='#06b6d4'; //parity biti rengi
+                } else{
+                    renkElement.style.backgroundColor='#2563eb'; //veri biti rengi
+                }
+                
+                var bitLabel=document.createElement('span'); //bit degerini gostermek icin
+                bitLabel.classList.add('bit-deger');
+                bitLabel.textContent=bit.val; //bit degerini labela ata
+                bitLabel.style.display="block";
+                bitLabel.style.marginTop="5px"; //ust bosluk icin
+
+                var indexElement=document.createElement('span');
+                indexElement.classList.add('bit-index');
+                indexElement.textContent=(bit.type == 'p' ? 'K' : 'M') + bit.pos;
+                indexElement.style.fontSize="10px"; //yazı boyutu
+                indexElement.style.fontFamily="sans-serif"; //yazi tipi
+                indexElement.style.color="#64748b"; //yazi rengi
+                indexElement.style.position="absolute";
+                indexElement.style.bottom="2px"; //kutunun en altına indirdik
+                indexElement.style.left="0";
+                indexElement.style.right="0";
+                indexElement.style.textAlign="center";
+
+                element.appendChild(renkElement);
+                element.appendChild(bitLabel);
+                element.appendChild(indexElement);
+
+                (function(p){
+                    element.addEventListener('click', function(){bitHatasi(p);});
+                })(bit.pos);
+                bellekContainer.appendChild(element);
+            }
+
+            var p=getParityCount(bitUzunluk); //parite biti sayisini al
+
+            var yazilanParite=[]; //yazilan parite degerleri icin
+            for(var i=0; i<bellekBitler.length; i++){
+                if(bellekBitler[i].type==='p'){
+                    yazilanParite.push(bellekBitler[i].val); //yazilan parite degerlerini diziye ekle
+                }
+            }
+            document.getElementById('yazilan-parite').textContent=yazilanParite.join(''); //yazilan parite degerlerini goster
+
+            var hesaplananParite=[]; //hesaplanan parite icin
+            for(var i=0; i<bellekBitler.length; i++){
+                if(bellekBitler[i].type==='p'){
+                    hesaplananParite.push(bellekBitler[i].orig); //hesaplanan pariteleri diziye ekle
+                }
+            }
+            document.getElementById('hesaplanan-parite').textContent=hesaplananParite.join(''); //hesaplanan parite degerlerini goster
+
+            var sendrom=sendromHesapla(); //sendromu hesaplamak icin
+            
+            var sendromUzunluk=sendrom.toString(2);
+            while(sendromUzunluk.length<p){
+                sendromUzunluk ="0" + sendromUzunluk;
+            }
+            document.getElementById('sendrom-kelime').textContent=sendromUzunluk;
+
+            var signalBox=document.getElementById('error-signal-box');
+            var fixBtn=document.getElementById('fix-btn');
+
+            if(sendrom===0){
+                signalBox.className="signal-box signal-clean";
+                signalBox.innerHTML="Hata Sinyali: TEMİZ(0)";
+                document.getElementById('detected-error-pos').innerText="Hata Yok";
+                document.getElementById('detected-error-pos').style.color="#34d399";
+                fixBtn.disabled=true;
+                fixBtn.classList.remove('active');
+                
+            } else{
+                signalBox.className = "signal-box signal-dirty";
+                signalBox.innerHTML = "Hata Sinyali: HATA BULUNDU (1)";
+                document.getElementById('detected-error-pos').textContent = sendrom + ". Bit Hatalı";
+                document.getElementById('detected-error-pos').style.color = "#940806";
+                fixBtn.disabled=false;
+                fixBtn.classList.add('active');
+            }
+
+            var cikis=[]; //cikis bitleri(sadece veri biti, ters sırada)
+            for(var i=0; i<bellekBitler.length; i++){
+                if(bellekBitler[i].type==='m'){
+                    cikis.push(bellekBitler[i].val);
+                }
+            }
+            document.getElementById('data-out-text').textContent=cikis.reverse().join('');
+        }
+    </script>
+
+</body>
+</html>
